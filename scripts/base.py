@@ -539,35 +539,63 @@ def get_ssh_base_url():
   return cur_origin[:ind+12]
 
 def git_update(repo, is_no_errors=False, is_current_dir=False, git_owner=""):
-  print("[git] update: " + repo)
-  owner = git_owner if git_owner else "ONLYOFFICE"
-  url = "https://github.com/" + owner + "/" + repo + ".git"
-  if git_is_ssh():
-    url = get_ssh_base_url() + repo + ".git"
-  folder = get_script_dir() + "/../../" + repo
-  if is_current_dir:
-    folder = repo
-  is_not_exit = False
-  if not is_dir(folder):
-    retClone = cmd("git", ["clone", url, folder], is_no_errors)
-    if retClone != 0:
-      return
-    is_not_exit = True
-  old_cur = os.getcwd()
-  os.chdir(folder)
-  cmd("git", ["fetch"], False if ("1" != config.option("update-light")) else True)
-  if is_not_exit or ("1" != config.option("update-light")):
-    retCheckout = cmd("git", ["checkout", "-f", config.option("branch")], True)
-    if (retCheckout != 0):
-      print("branch does not exist...")
-      print("switching to master...")
-      cmd("git", ["checkout", "-f", "master"])
-    cmd("git", ["submodule", "update", "--init", "--recursive"], True)
-  if (0 != config.option("branch").find("tags/")):
-    cmd("git", ["pull"], False if ("1" != config.option("update-light")) else True)
-    cmd("git", ["submodule", "update", "--recursive", "--remote"], True)
-  os.chdir(old_cur)
-  return
+    print("[git] update: " + repo)
+    owner = git_owner if git_owner else "ONLYOFFICE"
+    url = "https://github.com/" + owner + "/" + repo + ".git"
+    if git_is_ssh():
+        url = get_ssh_base_url() + repo + ".git"
+    folder = get_script_dir() + "/../../" + repo
+    if is_current_dir:
+        folder = repo
+    is_not_exit = False
+    if not is_dir(folder):
+        retClone = cmd("git", ["clone", url, folder], is_no_errors)
+        if retClone != 0:
+            return
+        is_not_exit = True
+    old_cur = os.getcwd()
+    os.chdir(folder)
+    cmd("git", ["fetch"], False if ("1" != config.option("update-light")) else True)
+    if is_not_exit or ("1" != config.option("update-light")):
+        # 检查是否是标签
+        is_tag = False
+        if config.option("branch").startswith("tags/"):
+            tag_name = config.option("branch")[5:]
+            is_tag = True
+        else:
+            # 尝试检查是否是标签
+            retTagCheck = cmd("git", ["rev-parse", "--verify", config.option("branch")], True)
+            if retTagCheck == 0:
+                is_tag = True
+            else:
+                retBranchCheck = cmd("git", ["rev-parse", "--verify", config.option("branch") + "^{branch}"], True)
+                if retBranchCheck == 0:
+                    is_tag = False
+                else:
+                    print("branch or tag does not exist...")
+                    print("switching to master...")
+                    cmd("git", ["checkout", "-f", "master"])
+                    os.chdir(old_cur)
+                    return
+
+        if is_tag:
+            print("Checking out tag: " + config.option("branch"))
+            cmd("git", ["checkout", "-f", config.option("branch")], True)
+            # 标签不需要 pull，避免后续分支相关操作
+            cmd("git", ["submodule", "update", "--init", "--recursive"], True)
+        else:
+            print("Checking out branch: " + config.option("branch"))
+            retCheckout = cmd("git", ["checkout", "-f", config.option("branch")], True)
+            if retCheckout != 0:
+                print("branch does not exist...")
+                print("switching to master...")
+                cmd("git", ["checkout", "-f", "master"])
+            cmd("git", ["submodule", "update", "--init", "--recursive"], True)
+            if (0 != config.option("branch").find("tags/")):
+                cmd("git", ["pull"], False if ("1" != config.option("update-light")) else True)
+                cmd("git", ["submodule", "update", "--recursive", "--remote"], True)
+    os.chdir(old_cur)
+    return
 
 def get_repositories():
   result = {}

@@ -566,6 +566,18 @@ def git_update(repo, is_no_errors=False, is_current_dir=False, git_owner=""):
   if (0 != config.option("branch").find("tags/")):
     cmd("git", ["pull"], False if ("1" != config.option("update-light")) else True)
     cmd("git", ["submodule", "update", "--recursive", "--remote"], True)
+
+  if (repo == "server"):
+      license_file_path = os.path.join("server", "Common/sources/license.js")
+      if os.path.isfile(license_file_path):
+          replaceInFileRE(
+              license_file_path,
+              r"('advancedApi:'[\s\t]*[^,]+)",
+              r"\1true,"
+          )
+      else:
+          print_error("license.js file not found in the server repository.")
+
   os.chdir(old_cur)
   return
 

@@ -568,7 +568,7 @@ def git_update(repo, is_no_errors=False, is_current_dir=False, git_owner=""):
     cmd("git", ["submodule", "update", "--recursive", "--remote"], True)
 
   if (repo == "server"):
-      license_file_path = os.path.join("server", "Common/sources/license.js")
+      license_file_path = os.path.join(folder, "Common/sources/license.js")
       if os.path.isfile(license_file_path):
           replaceInFileRE(
               license_file_path,

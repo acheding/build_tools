@@ -9,7 +9,6 @@ env:
   DOCKER_TAG: onlyoffice-builder
   BUILD_PATH: ./out
   PACKAGE_REPO: https://github.com/ONLYOFFICE/document-server-package.git
-  BRANCH: v8.2.2.34
 
 jobs:
   build:
@@ -25,7 +24,7 @@ jobs:
     - name: Build project
       run: |
         mkdir -p $BUILD_PATH
-        docker build --build-arg BRANCH=${{ env.BRANCH }} \
+        docker build --build-arg BRANCH=${{ github.ref_name }} \
                      --build-arg MODULE=${{ env.MODULE }} \
                      --build-arg PLATFORM=${{ env.PLATFORM }} \
                      --tag ${{ env.DOCKER_TAG }} .
@@ -40,7 +39,7 @@ jobs:
         npm install -g pkg
         sudo apt-get update
         sudo apt-get -y install build-essential debhelper
-        VERSION="8.2.2"
+        VERSION=$(echo ${{ github.ref_name }} | sed 's/^tags\///; s/^v//')
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         PRODUCT_VERSION=$VERSION BUILD_NUMBER='1' make deb
         mkdir -p $GITHUB_WORKSPACE/deb/

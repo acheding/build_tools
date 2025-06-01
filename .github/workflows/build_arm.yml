@@ -32,6 +32,7 @@ jobs:
 
     - name: Package deb
       run: |
+        cp -r $GITHUB_WORKSPACE/web-apps ./document-server-package/web-apps
         cd ..
         git clone ${{ env.PACKAGE_REPO }}
         cd document-server-package
@@ -50,3 +51,9 @@ jobs:
       with:
         name: onlyoffice-documentserver_${{ env.VERSION }}-1
         path: deb/onlyoffice-documentserver_${{ env.VERSION }}-1_arm64.deb
+
+    - name: Upload artifact2
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-apps
+        path: web-apps
